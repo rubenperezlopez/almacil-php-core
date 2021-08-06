@@ -1,7 +1,7 @@
 <?php
 
 /**
- * database.class.php
+ * Database.php
  *
  *
  * @category   Database
@@ -13,7 +13,7 @@
  * @link       www.rubenperezlopez.com
  */
 
-namespace Almacil;
+namespace Almacil\Database;
 
 class Database
 {

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * http.class.php
+ * Http.php
  *
  *
  * @category   Http
@@ -13,7 +13,7 @@
  * @link       www.rubenperezlopez.com
  */
 
-namespace Almacil;
+namespace Almacil\Http;
 
 class Http
 {

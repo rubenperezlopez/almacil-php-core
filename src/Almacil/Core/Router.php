@@ -1,7 +1,7 @@
 <?php
 
 /**
- * router.class.php
+ * Router.php
  *
  *
  * @category   Router
@@ -13,7 +13,7 @@
  * @link       www.rubenperezlopez.com
  */
 
-namespace Almacil;
+namespace Almacil\Router;
 
 class Router
 {
@@ -34,8 +34,6 @@ class Router
 
   public function run($app)
   {
-    require_once __DIR__ . '/../vendor/autoload.php';
-
     $this->router = new \Bramus\Router\Router();
 
     $this->segments = $app->getSegments();

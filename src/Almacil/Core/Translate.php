@@ -1,7 +1,7 @@
 <?php
 
 /**
- * translate.class.php
+ * Translate.php
  *
  *
  * @category   Translate
@@ -13,7 +13,7 @@
  * @link       www.rubenperezlopez.com
  */
 
-namespace Almacil;
+namespace Almacil\Translate;
 
 class Translate
 {

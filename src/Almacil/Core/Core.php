@@ -13,9 +13,9 @@
  * @link       www.rubenperezlopez.com
  */
 
-namespace Almacil;
+namespace Almacil\Core;
 
-class App
+class Core
 {
   private $rootDir;
   private $config;
@@ -101,24 +101,24 @@ class App
       require __DIR__ . '/translate.class.php';
       $directory = $this->rootDir . (isset($this->config->translate->directory) ? $this->config->translate->directory : 'i18n/');
       $findMissingTranslations = $this->config->translate->findMissingTranslations ? true : false;
-      $this->translate = new Translate($this->language_short, $directory, $findMissingTranslations);
+      $this->translate = new \Almacil\Translate\Translate($this->language_short, $directory, $findMissingTranslations);
     }
 
     if ($this->config->database->enabled) {
       require __DIR__ . '/database.class.php';
       $directory = $this->rootDir . (isset($this->config->database->directory) ? $this->config->database->directory : 'data/');
       $extension = isset($this->config->database->extension) ? $this->config->database->extension : 'json';
-      $this->db = new Database($directory, $extension);
+      $this->db = new \Almacil\Database\Database($directory, $extension);
     }
 
     if ($this->config->http->enabled) {
       require __DIR__ . '/http.class.php';
-      $this->http = new Http($this->config->http->defaultPrefix);
+      $this->http = new \Almacil\Http\Http($this->config->http->defaultPrefix);
     }
 
     if ($this->config->router->enabled) {
       require __DIR__ . '/router.class.php';
-      $this->router = new Router($this->rootDir . $this->config->router->routesFile);
+      $this->router = new \Almacil\Router\Router($this->rootDir . $this->config->router->routesFile);
     }
   }
 
