@@ -4,8 +4,89 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "69fea2a54703ef4b61289ef158d677d1",
+    "content-hash": "a57ec9f5a702d254bd0aafd5891de93e",
     "packages": [
+        {
+            "name": "almacil/php-database",
+            "version": "1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/rubenperezlopez/almacil-php-database.git",
+                "reference": "2d52ef92f7a81da63e10f469c3ce1b921b418c7b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/rubenperezlopez/almacil-php-database/zipball/2d52ef92f7a81da63e10f469c3ce1b921b418c7b",
+                "reference": "2d52ef92f7a81da63e10f469c3ce1b921b418c7b",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.0.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Almacil\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Rubén Pérez López",
+                    "email": "ruben@almacil.com",
+                    "homepage": "https://github.com/rubenperezlopez"
+                }
+            ],
+            "description": "A simple flat file database designed to persist data using just PHP and flat files. Perfect solution when no other database is available or for small projects.",
+            "support": {
+                "issues": "https://github.com/rubenperezlopez/almacil-php-database/issues",
+                "source": "https://github.com/rubenperezlopez/almacil-php-database/tree/1.0.1"
+            },
+            "time": "2021-08-06T19:42:55+00:00"
+        },
+        {
+            "name": "almacil/php-translate",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/rubenperezlopez/almacil-php-translate.git",
+                "reference": "cedb44972f017e5fcb4a1e149dcf27def151ef48"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/rubenperezlopez/almacil-php-translate/zipball/cedb44972f017e5fcb4a1e149dcf27def151ef48",
+                "reference": "cedb44972f017e5fcb4a1e149dcf27def151ef48",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.0.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Almacil\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Rubén Pérez López",
+                    "email": "ruben@almacil.com",
+                    "homepage": "https://www.rubenperezlopez.com"
+                }
+            ],
+            "support": {
+                "issues": "https://github.com/rubenperezlopez/almacil-php-translate/issues",
+                "source": "https://github.com/rubenperezlopez/almacil-php-translate/tree/1.0.0"
+            },
+            "time": "2021-08-06T21:41:23+00:00"
+        },
         {
             "name": "bramus/router",
             "version": "1.6",
@@ -60,11 +141,14 @@
     ],
     "packages-dev": [],
     "aliases": [],
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
-    "platform": [],
+    "platform": {
+        "php": ">=7.0.0",
+        "composer-runtime-api": "^2.0"
+    },
     "platform-dev": [],
     "plugin-api-version": "2.1.0"
 }

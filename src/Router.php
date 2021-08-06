@@ -13,7 +13,7 @@
  * @link       www.rubenperezlopez.com
  */
 
-namespace Almacil\Router;
+namespace Almacil;
 
 class Router
 {

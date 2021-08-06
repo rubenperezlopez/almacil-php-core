@@ -13,7 +13,7 @@
  * @link       www.rubenperezlopez.com
  */
 
-namespace Almacil\Http;
+namespace Almacil;
 
 class Http
 {
