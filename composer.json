@@ -4,10 +4,8 @@
     "type": "library",
     "require": {
         "php": ">=7.0.0",
-        "composer-runtime-api": "^2.0"
-    },
-    "require-dev": {
-      "bramus/router": "1.6"
+        "composer-runtime-api": "^2.0",
+        "bramus/router": "1.6"
     },
     "license": "MIT",
     "autoload": {
