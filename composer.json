@@ -19,5 +19,6 @@
             "email": "ruben@almacil.com",
             "homepage": "https://www.rubenperezlopez.com"
         }
-    ]
+    ],
+    "minimum-stability": "dev"
 }
