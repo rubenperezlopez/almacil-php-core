@@ -1,10 +1,10 @@
 <?php
 
 /**
- * translate.class.php
+ * Core.php
  *
  *
- * @category   Translate
+ * @category   Core
  * @author     Rubén Pérez López
  * @date       03/08/2021
  * @copyright  2021 Rubén Pérez López
