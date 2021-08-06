@@ -1,0 +1,22 @@
+{
+    "name": "rubenperezlopez/almacil-php-core",
+    "description": "Framework PHP para el desarrollo de aplicaciones web y APIs.",
+    "type": "library",
+    "require": {
+        "php": ">=7.0.0",
+        "bramus/router": "1.6"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Rubenperezlopez\\AlmacilPhpCore\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Rubén Pérez López",
+            "email": "ruben@almacil.com",
+            "homepage": "https://www.rubenperezlopez.com"
+        }
+    ]
+}

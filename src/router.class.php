@@ -34,7 +34,7 @@ class Router
 
   public function run($app)
   {
-    require_once __DIR__ . '/Bramus/Router.php';
+    require_once __DIR__ . '/../vendor/autoload.php';
 
     $this->router = new \Bramus\Router\Router();
 
