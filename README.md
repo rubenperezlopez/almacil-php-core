@@ -35,7 +35,7 @@ $rootDir = __DIR__;
 $configFile = 'app.config.json';
 
 // Create de instance
-$app = new \Almacil\Translate($rootDir, $configFile);
+$app = new \Almacil\App($rootDir, $configFile);
 ```
 <br>
 <br>
