@@ -1,7 +1,7 @@
-![GitHub last commit](https://img.shields.io/github/last-commit/rubenperezlopez/almacil-php-translate)
-![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/rubenperezlopez/almacil-php-translate?label=last%20version)
-![Packagist PHP Version Support](https://img.shields.io/packagist/php-v/almacil/php-translate)
-![GitHub](https://img.shields.io/github/license/rubenperezlopez/almacil-php-translate)
+![GitHub last commit](https://img.shields.io/github/last-commit/rubenperezlopez/almacil-php-core)
+![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/rubenperezlopez/almacil-php-core?label=last%20version)
+![Packagist PHP Version Support](https://img.shields.io/packagist/php-v/almacil/php-core)
+![GitHub](https://img.shields.io/github/license/rubenperezlopez/almacil-php-core)
 # ♥️ Almacil PHP Core
 
 This is a **simple MVC framework** written in PHP for rapid development of small projects.
