@@ -9,7 +9,7 @@
  * @date       03/08/2021
  * @copyright  2021 Rubén Pérez López
  * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
- * @version    03/08/2021 v1.0
+ * @version    23/08/2021 v1.1
  * @link       www.rubenperezlopez.com
  */
 
@@ -41,6 +41,29 @@ class App
     $this->rootDir = str_replace('//', '/', $rootDir . '/');
 
     $this->config = $this->getFile($this->rootDir . $configFile);
+
+    // SECTION: ENVIRONMENT
+    if (isset($this->config->environments)) {
+      $baseEnv = $this->getFile($this->rootDir . $this->config->environments->baseFile);
+
+      $keys = array_keys((array)$this->config->environments);
+      for ($k = 0; $k < count($keys); $k++) {
+        $key = $keys[$k];
+        if ($key !== 'baseFile') {
+          $item = $this->config->environments->{$key};
+          if ($_SERVER['HTTP_HOST'] === $item->domain) {
+            $propEnv = $this->getFile($this->rootDir . $item->propertiesFile);
+          }
+        }
+      }
+      $keys = array_keys((array)$propEnv);
+      for ($k = 0; $k < count($keys); $k++) {
+        $key = $keys[$k];
+        $baseEnv->{$key} = $propEnv->{$key};
+      }
+      $this->environments = $baseEnv;
+    }
+    // !SECTION: ENVIRONMENT
 
     $display_errors = $this->config->display_errors ? 0 : 1;
     ini_set('display_errors', $display_errors);
@@ -160,6 +183,11 @@ class App
   public function getSegments()
   {
     return $this->segments;
+  }
+
+  public function getEnvironmentConfiguration()
+  {
+    return $this->environment;
   }
 
   private static function getFile($file)

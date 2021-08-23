@@ -9,7 +9,7 @@
  * @date       04/08/2021
  * @copyright  2021 Rubén Pérez López
  * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
- * @version    04/08/2021 v1.0
+ * @version    23/08/2021 v1.1
  * @link       www.rubenperezlopez.com
  */
 
@@ -49,8 +49,10 @@ class Router
 
       $this->router->{$method}($route->path, function () use ($app, $route) {
         $_itemsToInclude = [];
-        if (($route->responseType ?? $this->config->default->responseType) === 'html') {
 
+        $route->params = $this->getRouteParams($app, $route);
+
+        if (($route->responseType ?? $this->config->default->responseType) === 'html') {
           header('Content-type: text/html; charset=UTF-8');
 
           $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $this->config->middlewares ?? [], $route));
@@ -100,6 +102,19 @@ class Router
     $this->router->run();
 
     return $this->router;
+  }
+
+  private function getRouteParams($app, $route) {
+    $params = new \stdClass();
+    $routeSegments = explode('/', $route->path);
+    $urlSegments = $app->getSegments();
+    for ($s = 0; $s < count($routeSegments); $s++) {
+      if (substr($routeSegments[$s], 0, 1) === '{') {
+        $varName = substr($routeSegments[$s], 1, strlen($routeSegments[$s]) - 2);
+        $params->$varName = $urlSegments[$s];
+      }
+    }
+    return $params;
   }
 
   private function getCacheIsEnabled($app, $route) {
