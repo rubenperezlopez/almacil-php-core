@@ -23,7 +23,7 @@ This is a **simple MVC framework** written in PHP for rapid development of small
 ## Installation
 Installation is possible using Composer
 ```bash
-composer requiere almacil/php-core
+composer require almacil/php-core
 ```
 ## Usage
 Create an instance of \Almacil\App:
