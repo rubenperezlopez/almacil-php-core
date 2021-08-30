@@ -9,7 +9,7 @@
  * @date       04/08/2021
  * @copyright  2021 Rubén Pérez López
  * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
- * @version    23/08/2021 v1.1
+ * @version    24/08/2021 v1.0.5
  * @link       www.rubenperezlopez.com
  */
 
@@ -21,6 +21,8 @@ class Router
   private $router;
 
   private $segments;
+  private $query;
+  private $body;
 
   public function __construct($routesFile = __DIR__ . '/routes.json')
   {
@@ -37,6 +39,8 @@ class Router
     $this->router = new \Bramus\Router\Router();
 
     $this->segments = $app->getSegments();
+    $this->query = $app->getQuery();
+    $this->body = $app->getBody();
 
     $this->router->set404(function () {
       header($_SERVER['SERVER_PROTOCOL'] . ' 404 Not Found');
@@ -46,17 +50,26 @@ class Router
     for ($r = 0; $r < count($this->config->routes); $r++) {
       $route = $this->config->routes[$r];
       $method = ($route->method ?? $this->config->default->method) ?? 'GET';
+      $lang = $app->getLang();
 
-      $this->router->{$method}($route->path, function () use ($app, $route) {
+      $this->router->{$method}("/$lang$route->path", function () use ($app, $route) {
         $_itemsToInclude = [];
+        $_response = isset($this->query->response) ?  $this->query->response : '';
 
         $route->params = $this->getRouteParams($app, $route);
 
-        if (($route->responseType ?? $this->config->default->responseType) === 'html') {
+        if ($_response === 'content') {
+          header('Content-type: text/html; charset=UTF-8');
+          $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $this->config->middlewares ?? []));
+          $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $route->middlewares ?? $this->config->default->middlewares ?? []));
+          $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, [$route->component], $route));
+        } else if ($_response === 'js') {
+          header('Content-type: text/javascript; charset=UTF-8');
+        } else if (($route->responseType ?? $this->config->default->responseType) === 'html') {
           header('Content-type: text/html; charset=UTF-8');
 
-          $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $this->config->middlewares ?? [], $route));
-          $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $route->middlewares ?? $this->config->default->middlewares ?? [], $route));
+          $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $this->config->middlewares ?? []));
+          $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $route->middlewares ?? $this->config->default->middlewares ?? []));
           $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, [$route->component], $route));
         } else {
 
@@ -70,8 +83,8 @@ class Router
             exit();
           }
 
-          $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $this->config->middlewares ?? [], $route));
-          $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $route->middlewares ?? $this->config->default->middlewares ?? [], $route));
+          $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $this->config->middlewares ?? []));
+          $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $route->middlewares ?? $this->config->default->middlewares ?? []));
           $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, [$route->controller], $route));
         }
 
@@ -81,6 +94,8 @@ class Router
             include($_item->file);
           } else if ($_item->type === 'html') {
             echo $_item->html;
+          } else if ($_item->type === 'js') {
+            echo '<script>' . $_item->code . '</script>';
           }
         }
 
@@ -88,7 +103,9 @@ class Router
         if ($this->getCacheIsEnabled($app, $route)) {
           // Crea el archivo de cache
           $end = microtime(true);
-          echo "<!--" . number_format($end - $app->getStartMicrotime(), 4) . "s-->";
+          if (($route->responseType ?? $this->config->default->responseType) === 'html') {
+            echo "<!--" . number_format($end - $app->getStartMicrotime(), 4) . "s-->";
+          }
           $cached = fopen($app->getCacheFile(), 'w');
           fwrite($cached, ob_get_contents());
           fclose($cached);
@@ -104,7 +121,8 @@ class Router
     return $this->router;
   }
 
-  private function getRouteParams($app, $route) {
+  private function getRouteParams($app, $route)
+  {
     $params = new \stdClass();
     $routeSegments = explode('/', $route->path);
     $urlSegments = $app->getSegments();
@@ -117,7 +135,39 @@ class Router
     return $params;
   }
 
-  private function getCacheIsEnabled($app, $route) {
+  private function getRequestAlmResponseType()
+  {
+    $almresponseArray = isset($this->query->almresponse) ? explode(',', $this->query->almresponse) : [];
+    return $almresponseArray;
+  }
+
+  private function hasRequestAlmResponseType($sections)
+  {
+    $almresponseArray = $this->getRequestAlmResponseType();
+    for ($a = 0; $a < count($sections); $a++) {
+      if ($sections[$a] != '') {
+        if (in_array($sections[$a], $almresponseArray)) {
+          return true;
+        }
+      } else if (count($almresponseArray) === 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private function getSpaEnabled($app, $route)
+  {
+    if (($route->responseType ?? $this->config->default->responseType) !== 'html') {
+      return false;
+    }
+    $globalSpaEnabled = isset($app->getConfig()->spa->enabled) ? $app->getConfig()->spa->enabled : false;
+
+    return $globalSpaEnabled;
+  }
+
+  private function getCacheIsEnabled($app, $route)
+  {
     if (($route->responseType ?? $this->config->default->responseType) !== 'html') {
       return false;
     }
@@ -158,37 +208,85 @@ class Router
         }
 
         // Incluímos los archivos que soporta el framework si existen
+        if (file_exists($file . '.service.php')) {
+          array_push($_itemsToInclude, $this->getFileItemObject($file . '.service.php'));
+        }
+
+        if (file_exists($file . '.middleware.php')) {
+          array_push($_itemsToInclude, $this->getFileItemObject($file . '.middleware.php'));
+        }
+
         if (file_exists($file . '.controller.php')) {
           array_push($_itemsToInclude, $this->getFileItemObject($file . '.controller.php'));
         }
 
-        if ($route) {
+        if ($route && count($this->getRequestAlmResponseType()) === 0) {
           array_push($_itemsToInclude, $this->getHtmlItemObject('<!doctype html><html lang="' . strtolower($app->getLang()) . '">'));
           $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $route->head ?? $this->config->default->head));
           array_push($_itemsToInclude, $this->getHtmlItemObject('<body>'));
         }
 
         if ($route) {
-          $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $route->beforeContent ?? $this->config->default->beforeContent));
+          if ($this->hasRequestAlmResponseType(['', 'body', 'before'])) {
+            if ($this->getSpaEnabled($app, $route)) {
+              array_push($_itemsToInclude, $this->getHtmlItemObject('<div id="alm-before">'));
+            }
+            $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $route->beforeContent ?? $this->config->default->beforeContent));
+            if ($this->getSpaEnabled($app, $route)) {
+              array_push($_itemsToInclude, $this->getHtmlItemObject('</div>'));
+            }
+          }
         }
 
-        if (file_exists($file . '.css.php')) {
-          array_push($_itemsToInclude, $this->getFileItemObject($file . '.css.php'));
-        }
-
-        if (file_exists($file . '.html.php')) {
-          array_push($_itemsToInclude, $this->getFileItemObject($file . '.html.php'));
+        if (file_exists($file . '.css.php') || file_exists($file . '.html.php')) {
+          if ($this->hasRequestAlmResponseType(['', 'body', 'content'])) {
+            if ($this->getSpaEnabled($app, $route)) {
+              array_push($_itemsToInclude, $this->getHtmlItemObject('<div id="alm-content">'));
+            }
+            if (file_exists($file . '.css.php')) {
+              array_push($_itemsToInclude, $this->getFileItemObject($file . '.css.php'));
+            }
+            if (file_exists($file . '.html.php')) {
+              array_push($_itemsToInclude, $this->getFileItemObject($file . '.html.php'));
+            }
+            if ($this->getSpaEnabled($app, $route)) {
+              array_push($_itemsToInclude, $this->getHtmlItemObject('</div>'));
+            }
+          }
         }
 
         if ($route) {
-          $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $route->afterContent ?? $this->config->default->afterContent));
+          if ($this->hasRequestAlmResponseType(['', 'body', 'after'])) {
+            if ($this->getSpaEnabled($app, $route)) {
+              array_push($_itemsToInclude, $this->getHtmlItemObject('<div id="alm-after">'));
+            }
+            $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $route->afterContent ?? $this->config->default->afterContent));
+            if ($this->getSpaEnabled($app, $route)) {
+              array_push($_itemsToInclude, $this->getHtmlItemObject('</div>'));
+            }
+          }
+        }
+
+        if ($this->getSpaEnabled($app, $route) && count($this->getRequestAlmResponseType()) === 0) {
+          array_push($_itemsToInclude, $this->getHtmlItemObject('<script src="http://localhost:8001/third/jquery.min.js"></script>'));
+          array_push($_itemsToInclude, $this->getJavaScriptItemObject($this->getCaptainScript($app)));
         }
 
         if (file_exists($file . '.js.php')) {
-          array_push($_itemsToInclude, $this->getFileItemObject($file . '.js.php'));
+          if ($this->hasRequestAlmResponseType(['', 'body', 'js'])) {
+            if ($this->getSpaEnabled($app, $route)) {
+              array_push($_itemsToInclude, $this->getHtmlItemObject('<div id="alm-js">'));
+            }
+            array_push($_itemsToInclude, $this->getFileItemObject($file . '.js.php'));
+            if ($this->getSpaEnabled($app, $route)) {
+              array_push($_itemsToInclude, $this->getHtmlItemObject('</div>'));
+            }
+          }
         }
 
-        array_push($_itemsToInclude, $this->getHtmlItemObject('</body></html>'));
+        if ($route && count($this->getRequestAlmResponseType()) === 0) {
+          array_push($_itemsToInclude, $this->getHtmlItemObject('</body></html>'));
+        }
       }
     }
     return $_itemsToInclude;
@@ -225,6 +323,14 @@ class Router
     return $item;
   }
 
+  private function getJavaScriptItemObject($code)
+  {
+    $item = new \stdClass();
+    $item->type = 'js';
+    $item->code = $code;
+    return $item;
+  }
+
   private function getHtmlItemObject($html)
   {
     $item = new \stdClass();
@@ -246,5 +352,100 @@ class Router
       }
     }
     return $fileData;
+  }
+
+  private function getCaptainScript($app)
+  {
+    $lang = $app->getLang();
+    $code = <<<EOD
+    window.onPopStateSections = window.onPopStateSections || [];
+    window.onpopstate = function(event) {
+      const route = document.location.href;
+      captain.navigate(route, window.onPopStateSections, true);
+    }
+    window.captain = (function() {
+      const navigate = function(route, sections = [], fromPopState = false) {
+        new Promise(function(resolve, reject) {
+          const firstSlash = route.replace('https://', 'http://').replace('http://', '').indexOf('/');
+          route = route.replace('https://', 'http://').replace('http://', '').substr(firstSlash);
+          route = '/$lang' + route.replace('/$lang/', '/');
+          const path = route;
+          const almresponse = !sections.length ? 'body' : sections.join(',');
+          if ((route || '').indexOf('?') > 0) {
+            route += '&almresponse=' + almresponse;
+          } else {
+            route += '?almresponse=' + almresponse;
+          }
+          $.ajax(route)
+            .done(function(response) {
+
+              if (!fromPopState) {
+                window.history.pushState("", "", path);
+              }
+
+              const html = $.parseHTML(response, null, true);
+              $.each(html, function(i, el) {
+
+                if (el.id === 'alm-before') {
+                  if (!$('body #alm-before').length) {
+                    $('body').prepend('<div id="alm-before"></div>');
+                  }
+                  $('body #alm-before').html(el.innerHTML);
+                }
+
+                if (el.id === 'alm-content') {
+                  if (!$('body #alm-content').length) {
+                    if ($('body #alm-before').length) {
+                      $('body #alm-before').after('<div id="alm-content"></div>');
+                    } else {
+                      $('body').prepend('<div id="alm-content"></div>');
+                    }
+                  }
+                  $('body #alm-content').html(el.innerHTML);
+                }
+
+                if (el.id === 'alm-after') {
+                  if (!$('body #alm-after').length) {
+                    if ($('body #alm-content').length) {
+                      $('body #alm-content').after('<div id="alm-after"></div>');
+                    } else if ($('body #alm-before').length) {
+                      $('body #alm-before').after('<div id="alm-after"></div>');
+                    } else {
+                      $('body').prepend('<div id="alm-after"></div>');
+                    }
+                  }
+                  $('body #alm-after').html(el.innerHTML);
+                }
+
+                if (el.id === 'alm-js') {
+                  console.log(el.id, el);
+                  if (!$('body #alm-js').length) {
+                    if ($('body #alm-after').length) {
+                      $('body #alm-after').after('<div id="alm-js"></div>');
+                    } else if ($('body #alm-content').length) {
+                      $('body #alm-content').after('<div id="alm-js"></div>');
+                    } else if ($('body #alm-before').length) {
+                      $('body #alm-before').after('<div id="alm-js"></div>');
+                    } else {
+                      $('body').prepend('<div id="alm-js"></div>');
+                    }
+                  }
+                  $('body #alm-js').html(el.innerHTML);
+                }
+
+              });
+              resolve("success");
+            })
+            .fail(function() {
+              reject("error");
+            });
+        });
+      }
+      return {
+        navigate
+      }
+    })();
+    EOD;
+    return $code;
   }
 }

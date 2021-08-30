@@ -9,7 +9,7 @@
  * @date       03/08/2021
  * @copyright  2021 Rubén Pérez López
  * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
- * @version    23/08/2021 v1.1
+ * @version    24/08/2021 v1.0.5
  * @link       www.rubenperezlopez.com
  */
 
@@ -31,7 +31,10 @@ class App
   public $router;
   public $http;
 
+  private $environments;
   private $segments = [];
+  private $query;
+  private $body;
 
   public function __construct($rootDir = __DIR__, $configFile = 'app.config.json')
   {
@@ -61,7 +64,7 @@ class App
         $key = $keys[$k];
         $baseEnv->{$key} = $propEnv->{$key};
       }
-      $this->environments = $baseEnv;
+      $this->environment = $baseEnv;
     }
     // !SECTION: ENVIRONMENT
 
@@ -77,6 +80,9 @@ class App
     } else {
       $this->segments = explode("/", substr($_SERVER['REQUEST_URI'], 1));
     }
+    $this->query = json_decode(json_encode($_GET), FALSE);
+    $body = file_get_contents("php://input");
+    $this->body = json_decode($body, FALSE);
     // !SECTION: SEGMENTS
 
     date_default_timezone_set($this->config->timezone ?? 'Europe/Madrid');
@@ -103,9 +109,11 @@ class App
 
     // SECTION: CACHE
     if (isset($this->config->cache->enabled)) {
+      $almresponse = isset($this->query->almresponse) ?  $this->query->almresponse : 'default';
+      $extension = 'html';
       $url = $_SERVER['REQUEST_URI'];
       $file = implode('|', explode('/', $url));
-      $this->cacheFile = $this->rootDir . ($this->config->cache->directory ?? 'cache') . '/cached-' . $language_long . $file . '.html';
+      $this->cacheFile = $this->rootDir . ($this->config->cache->directory ?? 'cache') . '/cached-' . $almresponse . '-' . $language_long . $file . '.' . $extension;
       $cachetime = $this->config->cache-> time ?? 18000;
 
       // Servimos de la cache si es menor que $cachetime
@@ -180,9 +188,22 @@ class App
     return $this->config;
   }
 
+  public function getCurrentRoute()
+  {
+    return substr(implode('/', $this->getSegments()), 2);
+  }
+
   public function getSegments()
   {
     return $this->segments;
+  }
+
+  public function getQuery() {
+    return $this->query;
+  }
+
+  public function getBody() {
+    return $this->body;
   }
 
   public function getEnvironmentConfiguration()
