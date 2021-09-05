@@ -98,9 +98,22 @@ class App
     $language_long = str_replace('-', '_', substr($_SERVER["HTTP_ACCEPT_LANGUAGE"], 0, 5));
     $language_short = substr($_SERVER["HTTP_ACCEPT_LANGUAGE"], 0, 2);
 
+    if (strlen($this->segments[0]) === 2 && in_array($this->segments[0], $languages_short)) {
+      $language_short = $this->segments[0];
+      for ($i = 0; $i < count($languages_long); $i++) {
+        if (substr($languages_long[$i], 0, 2)) {
+          $language_long = $languages_long[$i];
+        }
+      }
+    }
+
     if (!in_array($language_short, $languages_short)) {
       $language_short = $languages_short[0];
       $language_long = $languages_long[0];
+    }
+    if ($language_short !== $this->segments[0]) {
+      header('Location: /' . $language_short . ($_SERVER['REQUEST_URI'] === '/' ? '' : $_SERVER['REQUEST_URI']));
+      exit();
     }
     setlocale(LC_ALL, $language_long . '@euro', $language_long . '.UTF-8', $language_short);
     $this->language_short = $language_short;
@@ -137,7 +150,7 @@ class App
     if ($this->config->database->enabled) {
       $directory = $this->rootDir . (isset($this->config->database->directory) ? $this->config->database->directory : 'data/');
       $extension = isset($this->config->database->extension) ? $this->config->database->extension : 'json';
-      $this->db = new \Almacil\Database($directory, $extension);
+      $this->database = new \Almacil\Database($directory, $extension);
     }
 
     if ($this->config->http->enabled) {
