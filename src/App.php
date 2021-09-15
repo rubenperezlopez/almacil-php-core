@@ -36,6 +36,8 @@ class App
   private $query;
   private $body;
 
+  private $data;
+
   public function __construct($rootDir = __DIR__, $configFile = 'app.config.json')
   {
 
@@ -169,6 +171,16 @@ class App
     } else {
       return '';
     }
+  }
+
+  public function set($key, $value)
+  {
+    return $this->data->{$key} = $value;
+  }
+
+  public function get($key)
+  {
+    return $this->data->{$key};
   }
 
   public function getLang($long = false)

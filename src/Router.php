@@ -24,6 +24,8 @@ class Router
   private $query;
   private $body;
 
+  private $route;
+
   public function __construct($routesFile = __DIR__ . '/routes.json')
   {
     $this->config = $this->getFile($routesFile);
@@ -47,12 +49,16 @@ class Router
       $this->send('404, route not found! ' . $_SERVER['REQUEST_METHOD']);
     });
 
+    $lang = $app->getLang();
+    $this->router->setBasePath('/' . $lang);
+
+    $this->config->routes = $this->orderRoutes($this->config->routes);
+
     for ($r = 0; $r < count($this->config->routes); $r++) {
       $route = $this->config->routes[$r];
       $method = ($route->method ?? $this->config->default->method) ?? 'GET';
-      $lang = $app->getLang();
 
-      $this->router->{$method}("/$lang$route->path", function () use ($app, $route) {
+      $this->router->{$method}("$route->path", function () use ($app, $route) {
         $_itemsToInclude = [];
         $_response = isset($this->query->response) ?  $this->query->response : '';
 
@@ -88,6 +94,9 @@ class Router
           $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, [$route->controller], $route));
         }
 
+        unset($route->numSegments);
+        $this->route = $route;
+
         for ($_f = 0; $_f < count($_itemsToInclude); $_f++) {
           $_item = $_itemsToInclude[$_f];
           if ($_item->type === 'file') {
@@ -121,6 +130,10 @@ class Router
     return $this->router;
   }
 
+  public function getRoute() {
+    return $this->route;
+  }
+
   private function getRouteParams($app, $route)
   {
     $params = new \stdClass();
@@ -133,6 +146,29 @@ class Router
       }
     }
     return $params;
+  }
+
+  private function orderRoutes($routes) {
+    $newRoutes = [];
+    $arrNumSegments = [];
+    for ($r = 0; $r < count($routes); $r++) {
+      $route = $routes[$r];
+      $numSegments = count(explode('/', $route->path));
+      $route->numSegments = $numSegments;
+      if (!in_array($numSegments, $arrNumSegments)) {
+        array_push($arrNumSegments, $numSegments);
+      }
+    }
+    rsort($arrNumSegments);
+    for ($a = 0; $a < count($arrNumSegments); $a++) {
+      for ($r = 0; $r < count($routes); $r++) {
+        $route = $routes[$r];
+        if (count(explode('/', $route->path)) === $arrNumSegments[$a]) {
+          array_push($newRoutes, $route);
+        }
+      }
+    }
+    return $newRoutes;
   }
 
   private function getRequestAlmResponseType()
@@ -268,7 +304,7 @@ class Router
         }
 
         if ($this->getSpaEnabled($app, $route) && count($this->getRequestAlmResponseType()) === 0) {
-          array_push($_itemsToInclude, $this->getHtmlItemObject('<script src="http://localhost:8001/third/jquery.min.js"></script>'));
+          array_push($_itemsToInclude, $this->getHtmlItemObject('<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>'));
           array_push($_itemsToInclude, $this->getJavaScriptItemObject($this->getCaptainScript($app)));
         }
 
