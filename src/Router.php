@@ -130,7 +130,8 @@ class Router
     return $this->router;
   }
 
-  public function getRoute() {
+  public function getRoute()
+  {
     return $this->route;
   }
 
@@ -148,9 +149,12 @@ class Router
     return $params;
   }
 
-  private function orderRoutes($routes) {
+  private function orderRoutes($routes)
+  {
     $newRoutes = [];
     $arrNumSegments = [];
+    $arrNumRank = [];
+    $maxNumSegments = 0;
     for ($r = 0; $r < count($routes); $r++) {
       $route = $routes[$r];
       $numSegments = count(explode('/', $route->path));
@@ -158,12 +162,34 @@ class Router
       if (!in_array($numSegments, $arrNumSegments)) {
         array_push($arrNumSegments, $numSegments);
       }
+      if ($maxNumSegments < $numSegments) {
+        $maxNumSegments = $numSegments;
+      }
     }
     rsort($arrNumSegments);
-    for ($a = 0; $a < count($arrNumSegments); $a++) {
+    for ($r = 0; $r < count($routes); $r++) {
+      $route = $routes[$r];
+      $segments = explode('/', $route->path);
+      $strRank = '';
+      for ($s = 0; $s < $numSegments; $s++) {
+        if ($segments[$s] != '') {
+          $segment = $segments[$s];
+          $strRank .= substr($segment, 0, 1) === '{' ? '1' : '2';
+        } else {
+          $strRank .= '0';
+        }
+      }
+      $strRank .= $route->numSegments;
+      $route->rank = (int)$strRank;
+      if (!in_array($route->rank, $arrNumRank)) {
+        array_push($arrNumRank, $route->rank);
+      }
+    }
+    rsort($arrNumRank);
+    for ($a = 0; $a < count($arrNumRank); $a++) {
       for ($r = 0; $r < count($routes); $r++) {
         $route = $routes[$r];
-        if (count(explode('/', $route->path)) === $arrNumSegments[$a]) {
+        if ($route->rank === $arrNumRank[$a]) {
           array_push($newRoutes, $route);
         }
       }
@@ -304,7 +330,8 @@ class Router
         }
 
         if ($this->getSpaEnabled($app, $route) && count($this->getRequestAlmResponseType()) === 0) {
-          array_push($_itemsToInclude, $this->getHtmlItemObject('<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>'));
+          // array_push($_itemsToInclude, $this->getHtmlItemObject('<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>'));
+          array_push($_itemsToInclude, $this->getHtmlItemObject('<script src="http://localhost:8001/third/jquery.min.js"></script>'));
           array_push($_itemsToInclude, $this->getJavaScriptItemObject($this->getCaptainScript($app)));
         }
 
@@ -454,7 +481,6 @@ class Router
                 }
 
                 if (el.id === 'alm-js') {
-                  console.log(el.id, el);
                   if (!$('body #alm-js').length) {
                     if ($('body #alm-after').length) {
                       $('body #alm-after').after('<div id="alm-js"></div>');
