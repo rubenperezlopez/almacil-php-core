@@ -36,7 +36,7 @@ class Router
     return $this->segments;
   }
 
-  public function run($app)
+  public function run(&$app)
   {
     $this->router = new \Bramus\Router\Router();
 
@@ -49,6 +49,8 @@ class Router
       $this->send('404, route not found! ' . $_SERVER['REQUEST_METHOD']);
     });
 
+    $app->setHasError(false);
+
     $lang = $app->getLang();
     $this->router->setBasePath('/' . $lang);
 
@@ -58,7 +60,7 @@ class Router
       $route = $this->config->routes[$r];
       $method = ($route->method ?? $this->config->default->method) ?? 'GET';
 
-      $this->router->{$method}("$route->path", function () use ($app, $route) {
+      $this->router->{$method}("$route->path", function () use (&$app, $route) {
         $_itemsToInclude = [];
         $_response = isset($this->query->response) ?  $this->query->response : '';
 
@@ -97,10 +99,26 @@ class Router
         unset($route->numSegments);
         $this->route = $route;
 
+        $_errorShown = false;
         for ($_f = 0; $_f < count($_itemsToInclude); $_f++) {
           $_item = $_itemsToInclude[$_f];
           if ($_item->type === 'file') {
-            include($_item->file);
+            if ($app->getHasError() && $_item->section === 'content') {
+              if (!$_errorShown) {
+                $_errorShown = true;
+                $_rootDir = $app->getRootDir() ?? '';
+                $_file = $_rootDir . ($route->throw ?? $this->config->default->throw);
+                if ((file_exists($_file) && !is_dir($_file)) || (file_exists($_file . '.php') && !is_dir($_file . '.php'))) {
+                  if (file_exists($_file)) {
+                    include($_file);
+                  } else {
+                    include($_file . '.php');
+                  }
+                }
+              }
+            } else {
+              include($_item->file);
+            }
           } else if ($_item->type === 'html') {
             echo $_item->html;
           } else if ($_item->type === 'js') {
@@ -135,7 +153,7 @@ class Router
     return $this->route;
   }
 
-  private function getRouteParams($app, $route)
+  private function getRouteParams(&$app, $route)
   {
     $params = new \stdClass();
     $routeSegments = explode('/', $route->path);
@@ -218,7 +236,7 @@ class Router
     return false;
   }
 
-  private function getSpaEnabled($app, $route)
+  private function getSpaEnabled(&$app, $route)
   {
     if (($route->responseType ?? $this->config->default->responseType) !== 'html') {
       return false;
@@ -228,7 +246,7 @@ class Router
     return $globalSpaEnabled;
   }
 
-  private function getCacheIsEnabled($app, $route)
+  private function getCacheIsEnabled(&$app, $route)
   {
     if (($route->responseType ?? $this->config->default->responseType) !== 'html') {
       return false;
@@ -240,7 +258,7 @@ class Router
     return $routeCacheEnabled;
   }
 
-  private function includeFiles($app, $files = [], $route = null)
+  private function includeFiles(&$app, $files = [], $route = null)
   {
     $rootDir = $app->getRootDir() ?? '';
     $_itemsToInclude = [];
@@ -306,10 +324,10 @@ class Router
               array_push($_itemsToInclude, $this->getHtmlItemObject('<div id="alm-content">'));
             }
             if (file_exists($file . '.css.php')) {
-              array_push($_itemsToInclude, $this->getFileItemObject($file . '.css.php'));
+              array_push($_itemsToInclude, $this->getFileItemObject($file . '.css.php', 'content'));
             }
             if (file_exists($file . '.html.php')) {
-              array_push($_itemsToInclude, $this->getFileItemObject($file . '.html.php'));
+              array_push($_itemsToInclude, $this->getFileItemObject($file . '.html.php', 'content'));
             }
             if ($this->getSpaEnabled($app, $route)) {
               array_push($_itemsToInclude, $this->getHtmlItemObject('</div>'));
@@ -330,8 +348,7 @@ class Router
         }
 
         if ($this->getSpaEnabled($app, $route) && count($this->getRequestAlmResponseType()) === 0) {
-          // array_push($_itemsToInclude, $this->getHtmlItemObject('<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>'));
-          array_push($_itemsToInclude, $this->getHtmlItemObject('<script src="http://localhost:8001/third/jquery.min.js"></script>'));
+          array_push($_itemsToInclude, $this->getHtmlItemObject('<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>'));
           array_push($_itemsToInclude, $this->getJavaScriptItemObject($this->getCaptainScript($app)));
         }
 
@@ -378,10 +395,11 @@ class Router
     }
   }
 
-  private function getFileItemObject($file)
+  private function getFileItemObject($file, $section = 'layout')
   {
     $item = new \stdClass();
     $item->type = 'file';
+    $item->section = $section;
     $item->file = $file;
     return $item;
   }
@@ -417,7 +435,7 @@ class Router
     return $fileData;
   }
 
-  private function getCaptainScript($app)
+  private function getCaptainScript(&$app)
   {
     $lang = $app->getLang();
     $code = <<<EOD

@@ -38,6 +38,9 @@ class App
 
   private $data;
 
+  private $hasError = false;
+  private $objError;
+
   public function __construct($rootDir = __DIR__, $configFile = 'app.config.json')
   {
 
@@ -191,6 +194,29 @@ class App
   public function getRootDir()
   {
     return $this->rootDir;
+  }
+
+  public function setHasError($value)
+  {
+    $this->hasError = $value;
+  }
+
+  public function getHasError()
+  {
+    return $this->hasError;
+  }
+
+  public function getObjError()
+  {
+    return $this->objError;
+  }
+
+  public function throw($code, $data)
+  {
+    $this->hasError = true;
+    $this->objError = new \stdClass();
+    $this->objError->code = $code;
+    $this->objError->data = $data;
   }
 
   public function getCacheDir()
