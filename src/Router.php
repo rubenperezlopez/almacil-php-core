@@ -38,21 +38,19 @@ class Router
 
   public function run(&$app)
   {
-    $this->router = new \Bramus\Router\Router();
 
     $this->segments = $app->getSegments();
     $this->query = $app->getQuery();
     $this->body = $app->getBody();
 
-    $this->router->set404(function () {
-      header($_SERVER['SERVER_PROTOCOL'] . ' 404 Not Found');
-      $this->send('404, route not found! ' . $_SERVER['REQUEST_METHOD']);
-    });
-
     $app->setHasError(false);
 
     $lang = $app->getLang();
-    $this->router->setBasePath('/' . $lang);
+
+    $urlPath = str_replace('/' . $lang, '', $_SERVER['REQUEST_URI']);
+    if (strpos($urlPath, '?') > 0) {
+      $urlPath = substr($urlPath, 0, strpos($urlPath, '?'));
+    }
 
     $this->config->routes = $this->orderRoutes($this->config->routes);
 
@@ -60,7 +58,10 @@ class Router
       $route = $this->config->routes[$r];
       $method = ($route->method ?? $this->config->default->method) ?? 'GET';
 
-      $this->router->{$method}("$route->path", function () use (&$app, $route) {
+      if (
+        $this->matchRoute($urlPath, $route->path) &&
+        ($_SERVER['REQUEST_METHOD'] === $method || $_SERVER['REQUEST_METHOD'] === 'OPTIONS')
+      ) {
         $_itemsToInclude = [];
         $_response = isset($this->query->response) ?  $this->query->response : '';
 
@@ -140,12 +141,12 @@ class Router
         }
         // !SECTION: CACHE
 
-      });
+        return true;
+      }
     }
 
-    $this->router->run();
-
-    return $this->router;
+    header($_SERVER['SERVER_PROTOCOL'] . ' 404 Not Found');
+    echo '404, route not found! ' . $_SERVER['REQUEST_METHOD'];
   }
 
   public function getRoute()
@@ -213,6 +214,27 @@ class Router
       }
     }
     return $newRoutes;
+  }
+
+  private function matchRoute($urlPath, $routePath)
+  {
+    $urlSegments = explode('/', $urlPath);
+    $routeSegments = explode('/', $routePath);
+
+    if (count($urlSegments) !== count($routeSegments)) {
+      return false;
+    }
+
+    $segmentsMatch = 0;
+    for ($i = 0; $i < count($urlSegments); $i++) {
+      $urlSegment = $urlSegments[$i];
+      $routeSegment = $routeSegments[$i];
+      if ($urlSegment === $routeSegment || substr($routeSegment, 0, 1) === '{') {
+        $segmentsMatch++;
+      }
+    }
+
+    return $segmentsMatch === count($urlSegments);
   }
 
   private function getRequestAlmResponseType()
@@ -349,6 +371,7 @@ class Router
 
         if ($this->getSpaEnabled($app, $route) && count($this->getRequestAlmResponseType()) === 0) {
           array_push($_itemsToInclude, $this->getHtmlItemObject('<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>'));
+          // array_push($_itemsToInclude, $this->getHtmlItemObject('<script src="http://localhost:8001/third/jquery.min.js"></script>'));
           array_push($_itemsToInclude, $this->getJavaScriptItemObject($this->getCaptainScript($app)));
         }
 

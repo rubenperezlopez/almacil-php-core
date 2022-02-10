@@ -5,7 +5,6 @@
     "require": {
         "php": ">=7.0.0",
         "composer-runtime-api": "^2.0",
-        "bramus/router": "1.6",
         "almacil/php-database": "^1.0",
         "almacil/php-translate": "^1.0"
     },

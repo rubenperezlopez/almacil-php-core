@@ -50,6 +50,8 @@ class App
 
     $this->config = $this->getFile($this->rootDir . $configFile);
 
+    $this->data = new \stdClass();
+
     // SECTION: ENVIRONMENT
     if (isset($this->config->environments)) {
       $baseEnv = $this->getFile($this->rootDir . $this->config->environments->baseFile);
