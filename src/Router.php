@@ -36,6 +36,11 @@ class Router
     return $this->segments;
   }
 
+  public function getConfig()
+  {
+    return $this->config;
+  }
+
   public function run(&$app)
   {
 
@@ -62,69 +67,13 @@ class Router
         $this->matchRoute($urlPath, $route->path) &&
         ($_SERVER['REQUEST_METHOD'] === $method || $_SERVER['REQUEST_METHOD'] === 'OPTIONS')
       ) {
-        $_itemsToInclude = [];
-        $_response = isset($this->query->response) ?  $this->query->response : '';
 
         $route->params = $this->getRouteParams($app, $route);
 
-        if ($_response === 'content') {
-          header('Content-type: text/html; charset=UTF-8');
-          $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $this->config->middlewares ?? []));
-          $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $route->middlewares ?? $this->config->default->middlewares ?? []));
-          $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, [$route->component], $route));
-        } else if ($_response === 'js') {
-          header('Content-type: text/javascript; charset=UTF-8');
-        } else if (($route->responseType ?? $this->config->default->responseType) === 'html') {
-          header('Content-type: text/html; charset=UTF-8');
-
-          $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $this->config->middlewares ?? []));
-          $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $route->middlewares ?? $this->config->default->middlewares ?? []));
-          $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, [$route->component], $route));
+        if (strpos($route->component, '#') > 0) {
+          $this->printRouteClasses($app, $route);
         } else {
-
-          header('Access-Control-Allow-Origin: *');
-          header("Access-Control-Allow-Methods: POST, GET, OPTIONS, DELETE, PUT");
-          header("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, Action, User-Id, Session-Id, Device-Id, Cache-Hash");
-          header('Content-Type: application/json');
-          header('X-Powered-By: Almacil');
-
-          if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-            exit();
-          }
-
-          $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $this->config->middlewares ?? []));
-          $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $route->middlewares ?? $this->config->default->middlewares ?? []));
-          $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, [$route->controller], $route));
-        }
-
-        unset($route->numSegments);
-        $this->route = $route;
-
-        $_errorShown = false;
-        for ($_f = 0; $_f < count($_itemsToInclude); $_f++) {
-          $_item = $_itemsToInclude[$_f];
-          if ($_item->type === 'file') {
-            if ($app->getHasError() && $_item->section === 'content') {
-              if (!$_errorShown) {
-                $_errorShown = true;
-                $_rootDir = $app->getRootDir() ?? '';
-                $_file = $_rootDir . ($route->throw ?? $this->config->default->throw);
-                if ((file_exists($_file) && !is_dir($_file)) || (file_exists($_file . '.php') && !is_dir($_file . '.php'))) {
-                  if (file_exists($_file)) {
-                    include($_file);
-                  } else {
-                    include($_file . '.php');
-                  }
-                }
-              }
-            } else {
-              include($_item->file);
-            }
-          } else if ($_item->type === 'html') {
-            echo $_item->html;
-          } else if ($_item->type === 'js') {
-            echo '<script>' . $_item->code . '</script>';
-          }
+          $this->printRouteIncludes($app, $route);
         }
 
         // SECTION: CACHE
@@ -152,6 +101,97 @@ class Router
   public function getRoute()
   {
     return $this->route;
+  }
+
+  private function printRouteClasses(&$app, $route)
+  {
+    $componentDirectory = $this->getComponentDirectory($route->component);
+    $componentClassName = $this->getComponentClassName($route->component);
+    $componentDirectorySegments = explode('/', $componentDirectory);
+
+    $rootDir = $app->getRootDir() ?? '';
+
+    require $rootDir . '/' . $componentDirectory . '/' .
+      $componentDirectorySegments[count($componentDirectorySegments) - 1] . '.controller.php';
+
+    $componentClass = new $componentClassName($app, $route);
+    $componentClass->print($app, $route);
+  }
+
+  private function getComponentClassName($component)
+  {
+    return substr($component, strpos($component, '#') + 1);
+  }
+
+  private function getComponentDirectory($component)
+  {
+    return substr($component, 0, strpos($component, '#'));
+  }
+
+  private function printRouteIncludes(&$app, $route)
+  {
+    $_itemsToInclude = [];
+    $_response = isset($this->query->response) ?  $this->query->response : '';
+
+    if ($_response === 'content') {
+      header('Content-type: text/html; charset=UTF-8');
+      $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $this->config->middlewares ?? []));
+      $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $route->middlewares ?? $this->config->default->middlewares ?? []));
+      $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, [$route->component], $route));
+    } else if ($_response === 'js') {
+      header('Content-type: text/javascript; charset=UTF-8');
+    } else if (($route->responseType ?? $this->config->default->responseType) === 'html') {
+      header('Content-type: text/html; charset=UTF-8');
+
+      $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $this->config->middlewares ?? []));
+      $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $route->middlewares ?? $this->config->default->middlewares ?? []));
+      $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, [$route->component], $route));
+    } else {
+
+      header('Access-Control-Allow-Origin: *');
+      header("Access-Control-Allow-Methods: POST, GET, OPTIONS, DELETE, PUT");
+      header("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, Action, User-Id, Session-Id, Device-Id, Cache-Hash");
+      header('Content-Type: application/json');
+      header('X-Powered-By: Almacil');
+
+      if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        exit();
+      }
+
+      $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $this->config->middlewares ?? []));
+      $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, $route->middlewares ?? $this->config->default->middlewares ?? []));
+      $_itemsToInclude = array_merge($_itemsToInclude, $this->includeFiles($app, [$route->controller], $route));
+    }
+
+    unset($route->numSegments);
+    $this->route = $route;
+
+    $_errorShown = false;
+    for ($_f = 0; $_f < count($_itemsToInclude); $_f++) {
+      $_item = $_itemsToInclude[$_f];
+      if ($_item->type === 'file') {
+        if ($app->getHasError() && $_item->section === 'content') {
+          if (!$_errorShown) {
+            $_errorShown = true;
+            $_rootDir = $app->getRootDir() ?? '';
+            $_file = $_rootDir . ($route->throw ?? $this->config->default->throw);
+            if ((file_exists($_file) && !is_dir($_file)) || (file_exists($_file . '.php') && !is_dir($_file . '.php'))) {
+              if (file_exists($_file)) {
+                include($_file);
+              } else {
+                include($_file . '.php');
+              }
+            }
+          }
+        } else {
+          include($_item->file);
+        }
+      } else if ($_item->type === 'html') {
+        echo $_item->html;
+      } else if ($_item->type === 'js') {
+        echo '<script>' . $_item->code . '</script>';
+      }
+    }
   }
 
   private function getRouteParams(&$app, $route)
@@ -237,13 +277,13 @@ class Router
     return $segmentsMatch === count($urlSegments);
   }
 
-  private function getRequestAlmResponseType()
+  public function getRequestAlmResponseType()
   {
     $almresponseArray = isset($this->query->almresponse) ? explode(',', $this->query->almresponse) : [];
     return $almresponseArray;
   }
 
-  private function hasRequestAlmResponseType($sections)
+  public function hasRequestAlmResponseType($sections)
   {
     $almresponseArray = $this->getRequestAlmResponseType();
     for ($a = 0; $a < count($sections); $a++) {
@@ -258,7 +298,7 @@ class Router
     return false;
   }
 
-  private function getSpaEnabled(&$app, $route)
+  public function getSpaEnabled(&$app, $route)
   {
     if (($route->responseType ?? $this->config->default->responseType) !== 'html') {
       return false;
@@ -458,7 +498,7 @@ class Router
     return $fileData;
   }
 
-  private function getCaptainScript(&$app)
+  public function getCaptainScript(&$app)
   {
     $lang = $app->getLang();
     $code = <<<EOD

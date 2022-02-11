@@ -134,7 +134,7 @@ class App
       $url = $_SERVER['REQUEST_URI'];
       $file = implode('|', explode('/', $url));
       $this->cacheFile = $this->rootDir . ($this->config->cache->directory ?? 'cache') . '/cached-' . $almresponse . '-' . $language_long . $file . '.' . $extension;
-      $cachetime = $this->config->cache-> time ?? 18000;
+      $cachetime = $this->config->cache->time ?? 18000;
 
       // Servimos de la cache si es menor que $cachetime
       if (file_exists($this->cacheFile) && time() - $cachetime < filemtime($this->cacheFile)) {
@@ -185,7 +185,11 @@ class App
 
   public function get($key)
   {
-    return $this->data->{$key};
+    if (!isset($key)) {
+      return $this->data;
+    } else {
+      return $this->data->{$key};
+    }
   }
 
   public function getLang($long = false)
@@ -251,11 +255,13 @@ class App
     return $this->segments;
   }
 
-  public function getQuery() {
+  public function getQuery()
+  {
     return $this->query;
   }
 
-  public function getBody() {
+  public function getBody()
+  {
     return $this->body;
   }
 
