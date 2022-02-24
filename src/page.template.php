@@ -11,20 +11,20 @@ if (count($app->router->getRequestAlmResponseType()) === 0) {
 
   echo '<!doctype html><html lang="' . strtolower($app->getLang()) . '">';
 
-  include($this->getFilesRoute($app, $route->head ?? $app->router->getConfig()->default->head));
+  include($this->getFilesRoute($app, $app->router->getRoute()->head ?? $app->router->getConfig()->default->head));
 
   echo '<body>';
 }
 
 if ($app->router->hasRequestAlmResponseType(['', 'body', 'before'])) {
 
-  if ($app->router->getSpaEnabled($app, $route)) {
+  if ($app->router->getSpaEnabled($app, $app->router->getRoute())) {
     echo '<div id="alm-before">';
   }
 
-  include($this->getFilesRoute($app, $route->beforeContent ?? $app->router->getConfig()->default->beforeContent));
+  include($this->getFilesRoute($app, $app->router->getRoute()->beforeContent ?? $app->router->getConfig()->default->beforeContent));
 
-  if ($app->router->getSpaEnabled($app, $route)) {
+  if ($app->router->getSpaEnabled($app, $app->router->getRoute())) {
     echo '</div>';
   }
 }
@@ -32,7 +32,7 @@ if ($app->router->hasRequestAlmResponseType(['', 'body', 'before'])) {
 if ($this->pageConfig['templateUrl'] != '' || (isset($this->pageConfig['styleUrls']) && count($this->pageConfig['styleUrls']) > 0)) {
   if ($app->router->hasRequestAlmResponseType(['', 'body', 'content'])) {
 
-    if ($app->router->getSpaEnabled($app, $route)) {
+    if ($app->router->getSpaEnabled($app, $app->router->getRoute())) {
       echo '<div id="alm-content">';
     }
 
@@ -54,7 +54,7 @@ if ($this->pageConfig['templateUrl'] != '' || (isset($this->pageConfig['styleUrl
       include($this->pageConfig['directory'] . '/' . $this->pageConfig['templateUrl']);
     }
 
-    if ($app->router->getSpaEnabled($app, $route)) {
+    if ($app->router->getSpaEnabled($app, $app->router->getRoute())) {
       echo '</div>';
     }
   }
@@ -63,18 +63,18 @@ if ($this->pageConfig['templateUrl'] != '' || (isset($this->pageConfig['styleUrl
 
 if ($app->router->hasRequestAlmResponseType(['', 'body', 'after'])) {
 
-  if ($app->router->getSpaEnabled($app, $route)) {
+  if ($app->router->getSpaEnabled($app, $app->router->getRoute())) {
     echo '<div id="alm-after">';
   }
 
-  include($this->getFilesRoute($app, $route->afterContent ?? $app->router->getConfig()->default->afterContent));
+  include($this->getFilesRoute($app, $app->router->getRoute()->afterContent ?? $app->router->getConfig()->default->afterContent));
 
-  if ($app->router->getSpaEnabled($app, $route)) {
+  if ($app->router->getSpaEnabled($app, $app->router->getRoute())) {
     echo '</div>';
   }
 }
 
-if ($app->router->getSpaEnabled($app, $route) && count($app->router->getRequestAlmResponseType()) === 0) {
+if ($app->router->getSpaEnabled($app, $app->router->getRoute()) && count($app->router->getRequestAlmResponseType()) === 0) {
   echo '<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>';
   // array_push($_itemsToInclude, $this->getHtmlItemObject('<script src="http://localhost:8001/third/jquery.min.js"></script>'));
   echo '<script>' . $app->router->getCaptainScript($app) . '</script>';
@@ -83,7 +83,7 @@ if ($app->router->getSpaEnabled($app, $route) && count($app->router->getRequestA
 if (isset($this->pageConfig['scriptUrls']) && count($this->pageConfig['scriptUrls']) > 0) {
   if ($app->router->hasRequestAlmResponseType(['', 'body', 'js'])) {
 
-    if ($app->router->getSpaEnabled($app, $route)) {
+    if ($app->router->getSpaEnabled($app, $app->router->getRoute())) {
       echo '<div id="alm-js">';
     }
 
@@ -93,7 +93,7 @@ if (isset($this->pageConfig['scriptUrls']) && count($this->pageConfig['scriptUrl
       }
     }
 
-    if ($app->router->getSpaEnabled($app, $route)) {
+    if ($app->router->getSpaEnabled($app, $app->router->getRoute())) {
       echo '</div>';
     }
   }

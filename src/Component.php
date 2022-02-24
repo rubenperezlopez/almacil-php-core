@@ -19,14 +19,6 @@ class Component
 {
   public function print()
   {
-    if ($this->componentConfig['templateUrl'] === './header.html.php') {
-    // echo $this->componentConfig['templateUrl'];exit();
-    }
-    /*function t($text, $params = null)
-    {
-      global $app;
-      return $app->translate->get($text, $params);
-    }*/
 
     $arrayKeys = array_keys(get_object_vars($this));
     for ($i = 0; $i < count($arrayKeys); $i++) {

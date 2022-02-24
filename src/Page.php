@@ -17,7 +17,7 @@ namespace Almacil;
 
 class Page
 {
-  public function print(&$app, $route)
+  public function print(&$app)
   {
 
     $arrayKeys = array_keys(get_object_vars($this));

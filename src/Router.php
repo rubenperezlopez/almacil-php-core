@@ -18,7 +18,6 @@ namespace Almacil;
 class Router
 {
   private $config;
-  private $router;
 
   private $segments;
   private $query;
@@ -69,6 +68,7 @@ class Router
       ) {
 
         $route->params = $this->getRouteParams($app, $route);
+        $this->route = $route;
 
         if (strpos($route->component, '#') > 0) {
           $this->printRouteClasses($app, $route);
@@ -114,8 +114,8 @@ class Router
     require $rootDir . '/' . $componentDirectory . '/' .
       $componentDirectorySegments[count($componentDirectorySegments) - 1] . '.controller.php';
 
-    $componentClass = new $componentClassName($app, $route);
-    $componentClass->print($app, $route);
+    $componentClass = new $componentClassName($app);
+    $componentClass->print($app);
   }
 
   private function getComponentClassName($component)
