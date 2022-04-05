@@ -9,11 +9,16 @@ function t($text, $params = null)
 
 if (count($app->router->getRequestAlmResponseType()) === 0) {
 
-  echo '<!doctype html><html lang="' . strtolower($app->getLang()) . '">';
+  echo '<!doctype html><html class="' . $this->pageConfig['htmlClass'] . '" lang="' . strtolower($app->getLang()) . '">';
 
   include($this->getFilesRoute($app, $app->router->getRoute()->head ?? $app->router->getConfig()->default->head));
 
-  echo '<body>';
+  echo '<body class="' . $this->pageConfig['bodyClass'] . '">';
+}
+
+if ($app->router->getSpaEnabled($app, $app->router->getRoute()) && count($app->router->getRequestAlmResponseType()) === 0) {
+  echo '<script>' . $app->router->getPageClassScript($app) . '</script>';
+  echo '<script>' . $app->router->getComponentClassScript($app) . '</script>';
 }
 
 if ($app->router->hasRequestAlmResponseType(['', 'body', 'before'])) {
@@ -41,8 +46,10 @@ if ($this->pageConfig['templateUrl'] != '' || (isset($this->pageConfig['styleUrl
       count($this->pageConfig['styleUrls']) > 0
     ) {
       foreach ($this->pageConfig['styleUrls'] as $styleUrl) {
-        if (file_exists($this->pageConfig['directory'] . '/' . $styleUrl)) {
+        if (strpos($styleUrl, '.') === 0 ? file_exists($this->pageConfig['directory'] . '/' . $styleUrl) : false) {
           include($this->pageConfig['directory'] . '/' . $styleUrl);
+        } else if (file_exists($styleUrl)) {
+          include($styleUrl);
         }
       }
     }
@@ -51,7 +58,9 @@ if ($this->pageConfig['templateUrl'] != '' || (isset($this->pageConfig['styleUrl
       $this->pageConfig['templateUrl'] != '' &&
       file_exists($this->pageConfig['directory'] . '/' . $this->pageConfig['templateUrl'])
     ) {
+      echo '<div id="' . $this->pageConfig['elementId'] . '">';
       include($this->pageConfig['directory'] . '/' . $this->pageConfig['templateUrl']);
+      echo '</div>';
     }
 
     if ($app->router->getSpaEnabled($app, $app->router->getRoute())) {
@@ -88,8 +97,10 @@ if (isset($this->pageConfig['scriptUrls']) && count($this->pageConfig['scriptUrl
     }
 
     foreach ($this->pageConfig['scriptUrls'] as $scriptUrl) {
-      if (file_exists($this->pageConfig['directory'] . '/' . $scriptUrl)) {
+      if (strpos($scriptUrl, '.') === 0 ? file_exists($this->pageConfig['directory'] . '/' . $scriptUrl) : false) {
         include($this->pageConfig['directory'] . '/' . $scriptUrl);
+      } else if (file_exists($scriptUrl)) {
+        include($scriptUrl);
       }
     }
 

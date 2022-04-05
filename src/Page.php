@@ -17,8 +17,16 @@ namespace Almacil;
 
 class Page
 {
+
+  protected $elementId;
+
   public function print(&$app)
   {
+
+    if (!isset($this->pageConfig['elementId'])) {
+      $this->pageConfig['elementId'] = $this->getRandomString();
+    }
+    $this->elementId = $this->pageConfig['elementId'];
 
     $arrayKeys = array_keys(get_object_vars($this));
     for ($i = 0; $i < count($arrayKeys); $i++) {
@@ -26,6 +34,17 @@ class Page
     }
 
     include(__DIR__ . '/page.template.php');
+  }
+
+  private function getRandomString($length = 10)
+  {
+    $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    $charactersLength = strlen($characters);
+    $randomString = '';
+    for ($i = 0; $i < $length; $i++) {
+      $randomString .= $characters[rand(0, $charactersLength - 1)];
+    }
+    return $randomString;
   }
 
   private function getFilesRoute(&$app, $files)

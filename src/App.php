@@ -22,6 +22,7 @@ class App
   private $language_short = 'en';
   private $language_long = 'en_GB';
 
+  private $redisClient;
   private $cacheFile;
   private $start;
 
@@ -136,13 +137,39 @@ class App
       $this->cacheFile = $this->rootDir . ($this->config->cache->directory ?? 'cache') . '/cached-' . $almresponse . '-' . $language_long . $file . '.' . $extension;
       $cachetime = $this->config->cache->time ?? 18000;
 
-      // Servimos de la cache si es menor que $cachetime
-      if (file_exists($this->cacheFile) && time() - $cachetime < filemtime($this->cacheFile)) {
-        echo "<!-- Cached copy, generated " . date('H:i', filemtime($this->cacheFile)) . " -->\n";
-        readfile($this->cacheFile);
-        $end = microtime(true);
-        echo "<!--" . number_format($end - $this->start, 4) . "s-->";
-        exit;
+      if ($this->config->cache->type  === 'redis') {
+        require 'Predis/Autoloader.php';
+
+        \Predis\Autoloader::register();
+
+        $this->redisClient = new \Predis\Client([
+          'scheme' => $this->environment->redis->scheme ??'tcp',
+          'host'   => $this->environment->redis->host ?? $this->environment->redis->url,
+          'port'   => $this->environment->redis->port ?? 6379,
+        ]);
+
+        $cacheHash = md5($this->cacheFile);
+        $cachetimeSaved = $this->redisClient->get('cachetime-' . $cacheHash) ?? 0;
+        $cachefileSaved = $this->redisClient->get('cachefile-' . $cacheHash);
+
+        if (isset($cachefileSaved) && $cachefileSaved != '' && time() - $cachetime < $cachetimeSaved) {
+          echo "<!-- Cached copy, generated " . date('H:i', $cachetimeSaved) . " -->\n";
+          echo $cachefileSaved;
+          $end = microtime(true);
+          echo "<!--" . number_format($end - $this->start, 4) . "s-->";
+          exit;
+        }
+
+      } else {
+
+        // Servimos de la cache si es menor que $cachetime
+        if (file_exists($this->cacheFile) && time() - $cachetime < filemtime($this->cacheFile)) {
+          echo "<!-- Cached copy, generated " . date('H:i', filemtime($this->cacheFile)) . " -->\n";
+          readfile($this->cacheFile);
+          $end = microtime(true);
+          echo "<!--" . number_format($end - $this->start, 4) . "s-->";
+          exit;
+        }
       }
       ob_start();
     }
@@ -233,6 +260,11 @@ class App
   public function getCacheFile()
   {
     return $this->cacheFile;
+  }
+
+  public function getRedisClient()
+  {
+    return $this->redisClient;
   }
 
   public function getStartMicrotime()

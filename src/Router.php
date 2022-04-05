@@ -83,9 +83,21 @@ class Router
           if (($route->responseType ?? $this->config->default->responseType) === 'html') {
             echo "<!--" . number_format($end - $app->getStartMicrotime(), 4) . "s-->";
           }
-          $cached = fopen($app->getCacheFile(), 'w');
-          fwrite($cached, ob_get_contents());
-          fclose($cached);
+
+          if ($this->config->cache->type  === 'redis') {
+
+            $environment = $app->getEnvironmentConfiguration();
+            $redisClient = $app->getRedisClient();
+
+            $cacheHash = md5($app->getCacheFile());
+            $redisClient->set('cachetime-' . $cacheHash, time()) ?? 0;
+            $redisClient->set('cachefile-' . $cacheHash, ob_get_contents());
+          } else {
+            $cached = fopen($app->getCacheFile(), 'w');
+            fwrite($cached, ob_get_contents());
+            fclose($cached);
+          }
+
           ob_end_flush(); // Envia la salida al navegador
         }
         // !SECTION: CACHE
@@ -110,7 +122,12 @@ class Router
     $componentDirectorySegments = explode('/', $componentDirectory);
 
     $rootDir = $app->getRootDir() ?? '';
-
+    if (!file_exists($rootDir . '/' . $componentDirectory . '/' .
+      $componentDirectorySegments[count($componentDirectorySegments) - 1] . '.controller.php')) {
+      echo 'File not found: ' . $rootDir . '/' . $componentDirectory . '/' .
+        $componentDirectorySegments[count($componentDirectorySegments) - 1] . '.controller.php';
+      exit();
+    }
     require $rootDir . '/' . $componentDirectory . '/' .
       $componentDirectorySegments[count($componentDirectorySegments) - 1] . '.controller.php';
 
@@ -230,7 +247,7 @@ class Router
       $route = $routes[$r];
       $segments = explode('/', $route->path);
       $strRank = '';
-      for ($s = 0; $s < $numSegments; $s++) {
+      for ($s = 0; $s < $route->numSegments; $s++) {
         if ($segments[$s] != '') {
           $segment = $segments[$s];
           $strRank .= substr($segment, 0, 1) === '{' ? '1' : '2';
@@ -588,6 +605,82 @@ class Router
         navigate
       }
     })();
+    EOD;
+    return $code;
+  }
+
+  public function getPageClassScript(&$app)
+  {
+    $lang = $app->getLang();
+    $code = <<<EOD
+      class Page {
+        constructor() {
+
+          this.elementId = $('#alm-content div').first().attr('id');
+
+          $('#alm-content').bind('DOMNodeRemoved', (e) => {
+            var element = e.target;
+            if (element.id == this.elementId && typeof this.onDestroy === 'function') {
+              this.onDestroy();
+            }
+          });
+
+        }
+      }
+    EOD;
+    return $code;
+  }
+
+  public function getComponentClassScript(&$app)
+  {
+    $lang = $app->getLang();
+    $code = <<<EOD
+      class Component {
+        constructor(elementId) {
+          this._callbacks = {};
+
+          this.elementId = elementId;
+          if (this.elementId) {
+            $('#' + this.elementId).bind('DOMNodeRemoved', (e) => {
+              var element = e.target;
+              if (element.id == this.elementId && typeof this.onDestroy === 'function') {
+                this.onDestroy();
+              }
+            });
+          }
+
+        }
+
+        addListener(callback, id = this.#randomString()) {
+          this._callbacks[id] = callback;
+          return id;
+        }
+
+        removeListener(id) {
+          delete this._callbacks[id];
+          return true;
+        }
+
+        emit(message) {
+          const callbacks = this._callbacks || {};
+          Object.keys(this._callbacks || {}).forEach((id) => {
+            if (typeof callbacks[id] === 'function') {
+              callbacks[id](message);
+            }
+          });
+        }
+
+        #randomString(len = 6) {
+          let charSet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+          let randomString = '';
+          for (let i = 0; i < len; i++) {
+            let randomPoz = Math.floor(Math.random() * charSet.length);
+            randomString += charSet.substring(randomPoz, randomPoz + 1);
+          }
+          charSet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+          return randomString;
+        }
+      }
     EOD;
     return $code;
   }
