@@ -138,7 +138,7 @@ class App
       $cachetime = $this->config->cache->time ?? 18000;
 
       if ($this->config->cache->type  === 'redis') {
-        require 'Predis/Autoloader.php';
+        // require 'Predis/Autoloader.php';
 
         \Predis\Autoloader::register();
 

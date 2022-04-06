@@ -84,14 +84,16 @@ class Router
             echo "<!--" . number_format($end - $app->getStartMicrotime(), 4) . "s-->";
           }
 
-          if ($this->config->cache->type  === 'redis') {
+          $appConfig = $app->getConfig();
 
-            $environment = $app->getEnvironmentConfiguration();
+          if ($appConfig->cache->type  === 'redis') {
+
             $redisClient = $app->getRedisClient();
 
             $cacheHash = md5($app->getCacheFile());
             $redisClient->set('cachetime-' . $cacheHash, time()) ?? 0;
             $redisClient->set('cachefile-' . $cacheHash, ob_get_contents());
+
           } else {
             $cached = fopen($app->getCacheFile(), 'w');
             fwrite($cached, ob_get_contents());
@@ -99,6 +101,8 @@ class Router
           }
 
           ob_end_flush(); // Envia la salida al navegador
+        } else {
+          echo 'false';exit();
         }
         // !SECTION: CACHE
 
