@@ -146,6 +146,7 @@ class App
           'scheme' => $this->environment->redis->scheme ??'tcp',
           'host'   => $this->environment->redis->host ?? $this->environment->redis->url,
           'port'   => $this->environment->redis->port ?? 6379,
+          'persistent' => '1'
         ]);
 
         $cacheHash = md5($this->cacheFile);
