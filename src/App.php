@@ -150,11 +150,29 @@ class App
         ]);
 
         $cacheHash = md5($this->cacheFile);
-        $cachetimeSaved = $this->redisClient->get('cachetime-' . $cacheHash) ?? 0;
+
+        $cachedb = json_decode($this->redisClient->get('cachedb') ?? 'null');
+        if ($cachedb === null || $cachedb == 'Array') {
+          $cachedb = [];
+        }
+        $newChadedb = [];
+
+        for ($c = 0; $c < count($cachedb); $c++) {
+          $cacheObject = $cachedb[$c];
+          if ($cacheObject->expiretime > time()) {
+            array_push($newChadedb, $cacheObject);
+          } else {
+            $this->redisClient->set('cacheexpiretime-' . $cacheObject->hash, null);
+            $this->redisClient->set('cachefile-' . $cacheObject->hash, null);
+          }
+        }
+        $this->redisClient->set('cachedb', json_encode($newChadedb));
+
+        $cacheExpireTimeSaved = $this->redisClient->get('cacheexpiretime-' . $cacheHash) ?? 0;
         $cachefileSaved = $this->redisClient->get('cachefile-' . $cacheHash);
 
-        if (isset($cachefileSaved) && $cachefileSaved != '' && time() - $cachetime < $cachetimeSaved) {
-          echo "<!-- Cached copy, generated " . date('H:i', $cachetimeSaved) . " -->\n";
+        if (isset($cachefileSaved) && $cachefileSaved != '' && time() < $cacheExpireTimeSaved) {
+          echo "<!-- Cached copy, generated " . date('H:i:s', $cacheExpireTimeSaved) . " -->\n";
           echo $cachefileSaved;
           $end = microtime(true);
           echo "<!--" . number_format($end - $this->start, 4) . "s-->";
@@ -165,7 +183,7 @@ class App
 
         // Servimos de la cache si es menor que $cachetime
         if (file_exists($this->cacheFile) && time() - $cachetime < filemtime($this->cacheFile)) {
-          echo "<!-- Cached copy, generated " . date('H:i', filemtime($this->cacheFile)) . " -->\n";
+          echo "<!-- Cached copy, generated " . date('H:i:s', filemtime($this->cacheFile)) . " -->\n";
           readfile($this->cacheFile);
           $end = microtime(true);
           echo "<!--" . number_format($end - $this->start, 4) . "s-->";

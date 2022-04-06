@@ -78,22 +78,35 @@ class Router
 
         // SECTION: CACHE
         if ($this->getCacheIsEnabled($app, $route)) {
+
           // Crea el archivo de cache
+          $appConfig = $app->getConfig();
+          $expireTime = time() + (int)($route->cache->time ?? $appConfig->cache->time ?? 60);
           $end = microtime(true);
+
           if (($route->responseType ?? $this->config->default->responseType) === 'html') {
             echo "<!--" . number_format($end - $app->getStartMicrotime(), 4) . "s-->";
+            echo "<!--" . date('d/m/Y H:i:s', $expireTime) . " " . (int)($route->cache->time ?? $appConfig->cache->time ?? 60) . "s-->";
           }
-
-          $appConfig = $app->getConfig();
 
           if ($appConfig->cache->type  === 'redis') {
 
             $redisClient = $app->getRedisClient();
-
             $cacheHash = md5($app->getCacheFile());
-            $redisClient->set('cachetime-' . $cacheHash, time()) ?? 0;
-            $redisClient->set('cachefile-' . $cacheHash, ob_get_contents());
 
+            $cachedb = json_decode($redisClient->get('cachedb') ?? 'null');
+            if ($cachedb === null) {
+              $cachedb = [];
+            }
+            $cacheObject = new \stdClass();
+            $cacheObject->hash = $cacheHash;
+            $cacheObject->expiretime = $expireTime;
+            array_push($cachedb, $cacheObject);
+
+            $redisClient->set('cachedb', json_encode($cachedb));
+            $redisClient->set('cacheexpiretime-' . $cacheHash, $expireTime);
+            $redisClient->set('cachefile-' . $cacheHash, ob_get_contents());
+            $tem  = $redisClient->get('cacheexpiretime-' . $cacheHash);
           } else {
             $cached = fopen($app->getCacheFile(), 'w');
             fwrite($cached, ob_get_contents());
@@ -101,8 +114,6 @@ class Router
           }
 
           ob_end_flush(); // Envia la salida al navegador
-        } else {
-          echo 'false';exit();
         }
         // !SECTION: CACHE
 
