@@ -137,13 +137,13 @@ class Router
     $componentDirectorySegments = explode('/', $componentDirectory);
 
     $rootDir = $app->getRootDir() ?? '';
-    if (!file_exists($rootDir . '/' . $componentDirectory . '/' .
+    if (!file_exists($rootDir . $componentDirectory . '/' .
       $componentDirectorySegments[count($componentDirectorySegments) - 1] . '.controller.php')) {
-      echo 'File not found: ' . $rootDir . '/' . $componentDirectory . '/' .
+      echo 'File not found: ' . $rootDir . $componentDirectory . '/' .
         $componentDirectorySegments[count($componentDirectorySegments) - 1] . '.controller.php';
       exit();
     }
-    require $rootDir . '/' . $componentDirectory . '/' .
+    require $rootDir . $componentDirectory . '/' .
       $componentDirectorySegments[count($componentDirectorySegments) - 1] . '.controller.php';
 
     $componentClass = new $componentClassName($app);
