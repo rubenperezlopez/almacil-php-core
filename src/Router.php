@@ -51,7 +51,7 @@ class Router
 
     $lang = $app->getLang();
 
-    $urlPath = str_replace('/' . $lang, '', $_SERVER['REQUEST_URI']);
+    $urlPath = str_replace('/' . $lang . '/', '/', $_SERVER['REQUEST_URI']);
     if (strpos($urlPath, '?') > 0) {
       $urlPath = substr($urlPath, 0, strpos($urlPath, '?'));
     }
@@ -666,7 +666,7 @@ class Router
 
         }
 
-        addListener(callback, id = this.#randomString()) {
+        addListener(callback, id = this.randomString()) {
           this._callbacks[id] = callback;
           return id;
         }
@@ -685,7 +685,7 @@ class Router
           });
         }
 
-        #randomString(len = 6) {
+        randomString(len = 6) {
           let charSet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
           let randomString = '';
           for (let i = 0; i < len; i++) {

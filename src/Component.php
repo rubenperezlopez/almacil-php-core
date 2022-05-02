@@ -20,11 +20,14 @@ class Component
 
   protected $elementId;
 
-  public function print()
+  public function print($forceElementId = null)
   {
 
     if (!isset($this->componentConfig['elementId'])) {
       $this->componentConfig['elementId'] = $this->getRandomString();
+    }
+    if ($forceElementId !== null) {
+      $this->componentConfig['elementId'] = $forceElementId;
     }
     $this->elementId = $this->componentConfig['elementId'];
 
@@ -50,9 +53,13 @@ class Component
         $this->componentConfig['templateUrl'] != '' &&
         file_exists($this->componentConfig['directory'] . '/' . $this->componentConfig['templateUrl'])
       ) {
-        echo '<div id="' . $this->componentConfig['elementId'] . '">';
+        if ($this->componentConfig['elementId'] != '') {
+          echo '<div id="' . $this->componentConfig['elementId'] . '">';
+        }
         include($this->componentConfig['directory'] . '/' . $this->componentConfig['templateUrl']);
-        echo '</div>';
+        if ($this->componentConfig['elementId'] != '') {
+          echo '</div>';
+        }
       }
     }
 
@@ -65,6 +72,7 @@ class Component
         }
       }
     }
+
   }
 
   private function getRandomString($length = 10)
