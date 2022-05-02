@@ -129,7 +129,7 @@ class App
     // !SECTION: IDIOMA
 
     // SECTION: CACHE
-    if (isset($this->config->cache->enabled)) {
+    if (isset($this->config->cache->enabled) && $this->config->cache->enabled) {
       $almresponse = isset($this->query->almresponse) ?  $this->query->almresponse : 'default';
       $extension = 'html';
       $url = $_SERVER['REQUEST_URI'];
@@ -143,7 +143,7 @@ class App
         \Predis\Autoloader::register();
 
         $this->redisClient = new \Predis\Client([
-          'scheme' => $this->environment->redis->scheme ??'tcp',
+          'scheme' => $this->environment->redis->scheme ?? 'tcp',
           'host'   => $this->environment->redis->host ?? $this->environment->redis->url,
           'port'   => $this->environment->redis->port ?? 6379,
           'persistent' => '1'
