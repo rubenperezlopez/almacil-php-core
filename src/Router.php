@@ -122,7 +122,11 @@ class Router
     }
 
     header($_SERVER['SERVER_PROTOCOL'] . ' 404 Not Found');
-    echo '404, route not found! ' . $_SERVER['REQUEST_METHOD'];
+
+    $protocol = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off') || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+    $url = $protocol . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+
+    echo '404, route not found! ' . $_SERVER['REQUEST_METHOD'] . '<br><br>' . $url;
   }
 
   public function getRoute()
