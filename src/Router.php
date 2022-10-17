@@ -82,6 +82,7 @@ class Router
           // Crea el archivo de cache
           $appConfig = $app->getConfig();
           $expireTime = time() + (int)($route->cache->time ?? $appConfig->cache->time ?? 60);
+          $expireSeconds = (int)($route->cache->time ?? $appConfig->cache->time ?? 60);
           $end = microtime(true);
 
           if (($route->responseType ?? $this->config->default->responseType) === 'html') {
@@ -94,19 +95,8 @@ class Router
             $redisClient = $app->getRedisClient();
             $cacheHash = md5($app->getCacheFile());
 
-            $cachedb = json_decode($redisClient->get('cachedb') ?? 'null');
-            if ($cachedb === null) {
-              $cachedb = [];
-            }
-            $cacheObject = new \stdClass();
-            $cacheObject->hash = $cacheHash;
-            $cacheObject->expiretime = $expireTime;
-            array_push($cachedb, $cacheObject);
-
-            $redisClient->set('cachedb', json_encode($cachedb));
-            $redisClient->set('cacheexpiretime-' . $cacheHash, $expireTime);
             $redisClient->set('cachefile-' . $cacheHash, ob_get_contents());
-            $tem  = $redisClient->get('cacheexpiretime-' . $cacheHash);
+            $redisClient->expire('cachefile-' . $cacheHash, $expireSeconds);
           } else {
             $cached = fopen($app->getCacheFile(), 'w');
             fwrite($cached, ob_get_contents());

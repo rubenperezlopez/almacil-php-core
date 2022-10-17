@@ -151,22 +151,13 @@ class App
 
         $cacheHash = md5($this->cacheFile);
 
-        $cachedb = json_decode($this->redisClient->get('cachedb') ?? 'null');
-        if ($cachedb === null || $cachedb == 'Array') {
-          $cachedb = [];
-        }
-        $newChadedb = [];
-
-        for ($c = 0; $c < count($cachedb); $c++) {
-          $cacheObject = $cachedb[$c];
-          if ($cacheObject->expiretime > time()) {
-            array_push($newChadedb, $cacheObject);
-          } else {
-            $this->redisClient->set('cacheexpiretime-' . $cacheObject->hash, null);
-            $this->redisClient->set('cachefile-' . $cacheObject->hash, null);
+        $redisKeys = $this->redisClient->executeRaw(['KEYS', '*']);
+        for ($rki = 0; $rki < count($redisKeys); $rki++) {
+          $TTL = $this->redisClient->executeRaw(['TTL', $redisKeys[$rki]]);
+          if ($TTL < 0) {
+            $this->redisClient->expire($redisKeys[$rki], 10);
           }
         }
-        $this->redisClient->set('cachedb', json_encode($newChadedb));
 
         $cacheExpireTimeSaved = $this->redisClient->get('cacheexpiretime-' . $cacheHash) ?? 0;
         $cachefileSaved = $this->redisClient->get('cachefile-' . $cacheHash);
@@ -178,7 +169,6 @@ class App
           echo "<!--" . number_format($end - $this->start, 4) . "s-->";
           exit;
         }
-
       } else {
 
         // Servimos de la cache si es menor que $cachetime
