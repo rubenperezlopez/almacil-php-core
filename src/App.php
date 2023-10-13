@@ -9,7 +9,7 @@
  * @date       03/08/2021
  * @copyright  2023 Rubén Pérez López
  * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
- * @version    13/10/2023 v1.1.0
+ * @version    13/10/2023 v1.6.0
  * @link       www.rubenperezlopez.com
  */
 
