@@ -7,9 +7,9 @@
  * @category   App
  * @author     Rubén Pérez López
  * @date       03/08/2021
- * @copyright  2021 Rubén Pérez López
+ * @copyright  2023 Rubén Pérez López
  * @license    http://www.php.net/license/3_0.txt  PHP License 3.0
- * @version    24/08/2021 v1.0.5
+ * @version    13/10/2023 v1.1.0
  * @link       www.rubenperezlopez.com
  */
 
@@ -32,7 +32,7 @@ class App
   public $router;
   public $http;
 
-  private $environments;
+  private $environment;
   private $segments = [];
   private $query;
   private $body;
@@ -58,11 +58,12 @@ class App
       $baseEnv = $this->getFile($this->rootDir . $this->config->environments->baseFile);
 
       $keys = array_keys((array)$this->config->environments);
+      $app_env = getenv('APP_ENV');
       for ($k = 0; $k < count($keys); $k++) {
         $key = $keys[$k];
         if ($key !== 'baseFile') {
           $item = $this->config->environments->{$key};
-          if ($_SERVER['HTTP_HOST'] === $item->domain) {
+          if ($app_env === $key || $_SERVER['HTTP_HOST'] === $item->domain) {
             $propEnv = $this->getFile($this->rootDir . $item->propertiesFile);
           }
         }
@@ -187,7 +188,8 @@ class App
     if ($this->config->translate->enabled) {
       $directory = $this->rootDir . (isset($this->config->translate->directory) ? $this->config->translate->directory : 'i18n/');
       $findMissingTranslations = $this->config->translate->findMissingTranslations ? true : false;
-      $this->translate = new \Almacil\Translate($this->language_short, $directory, $findMissingTranslations);
+      $inContextEditorActivated = in_array($this->environment->environment, $this->config->translate->inContextEditorActivatedEnvironments) && $this->environment->environment !== 'production' ? true : false;
+      $this->translate = new \Almacil\Translate($this->language_short, $directory, $findMissingTranslations, $inContextEditorActivated);
     }
 
     if ($this->config->database->enabled) {
@@ -202,6 +204,14 @@ class App
 
     if ($this->config->router->enabled) {
       $this->router = new \Almacil\Router($this->rootDir . $this->config->router->routesFile);
+    }
+  }
+
+  public function setInContextEditor($value) {
+    if ($this->config->translate->enabled) {
+      return $this->translate->setInContextEditor($value);
+    } else {
+      return '';
     }
   }
 
